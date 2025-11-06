@@ -1,65 +1,106 @@
-import Image from "next/image";
+"use client"
+
+import gsap from "gsap";
+import CanvasScene from "./__components/3d/CanvasScene";
+import { LogoHero } from "./__components/3d/LogoHero";
+import { LogoStory } from "./__components/3d/LogoStory";
+import Hero from "./__components/layout/Hero";
+import Story from "./__components/layout/Story";
+import { useRef } from "react";
+import * as THREE from 'three';
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Services from "./__components/layout/Services";
+import { useGSAP } from "@gsap/react";
+import Portfolio from "./__components/layout/Portfolio";
+import { PortfolioCards } from "./__components/3d/PortfolioCards";
+import { SplitText } from "gsap/SplitText";
+import Faq from "./__components/layout/Faq";
+import Footer from "./__components/layout/Footer";
+import { usePinStore } from "@/store/pinstore";
+import CanvasScene2 from "./__components/3d/CanvasScene2";
+
+gsap.registerPlugin(ScrollTrigger, SplitText);
 
 export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+	const heroRef = useRef<THREE.Mesh>(null!);
+	const storyRef = useRef<THREE.Mesh>(null!);	
+	const canvasRef = useRef(null!);	
+	const cardsRef = useRef<THREE.Group>(null!);
+	const setPinned = usePinStore.getState().setPinned;
+
+	useGSAP(() => {
+		const waitForRefs = () => {
+			if (!heroRef.current || !storyRef.current || !cardsRef.current) {
+				requestAnimationFrame(waitForRefs);
+				return;
+			}
+
+			const tl = gsap.timeline({
+				scrollTrigger: {
+					trigger: ".story-section",
+					start: "top bottom",
+					end: "bottom bottom",
+					scrub: 1.8,
+					onUpdate: (self) => {
+						if (self.progress === 1) {
+							setPinned("true"); // pin activé quand bottom bottom atteint
+						} else {
+							setPinned("false"); // désactive pin sinon (y compris si on remonte)
+						}
+					},
+				},
+			});
+
+			tl.to(heroRef.current.position, { z: 5, y: 0 , duration: 1 }, 0)
+			.to(storyRef.current.position, { y: 0, duration: 1 }, 0)
+			// enchaînement des mouvements latéraux
+			.to(storyRef.current.position, { x: -1, duration: 1 })
+			.to(storyRef.current.position, { x: 0, duration: 1 })
+			.to(storyRef.current.position, { x: 1, duration: 1 })
+			.to(storyRef.current.position, { x: 0, duration: 1 })
+			.to(storyRef.current.position, { x: -1, duration: 1 });
+
+			const tl2 = gsap.timeline({
+				scrollTrigger: {
+					trigger: ".portfolio-section",
+					start: "top bottom",
+					end: "top top",
+					scrub: 1,
+					// onUpdate: (self) => {
+					// 	if (self.progress === 1) {
+					// 		setPinned("portfolio"); 
+					// 	} else {
+					// 		setPinned("portfolio"); // désactive pin sinon (y compris si on remonte)
+					// 	}
+					// },
+				},
+			});
+
+			tl2.to(cardsRef.current.position, { y: 0, duration: 1 })
+
+			return () => ScrollTrigger.getAll().forEach(st => st.kill());
+		};
+
+		waitForRefs();
+	}, []);
+
+
+	return (
+		<main className="relative overflow-x-hidden bg-linear-to-b from-gray-900 to-black text-gray-300">
+			<CanvasScene ref={canvasRef}>
+				<LogoHero ref={heroRef} />			
+				<LogoStory ref={storyRef} />				
+			</CanvasScene>
+			<Hero />
+			<Story />
+			<Services />
+			<Portfolio>
+				<CanvasScene2>
+					<PortfolioCards ref={cardsRef} />
+				</CanvasScene2>
+			</Portfolio>
+			<Faq />
+			<Footer />
+		</main>
+	);
 }

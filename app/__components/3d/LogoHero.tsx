@@ -25,4 +25,6 @@ export const LogoHero = forwardRef<Mesh, JSX.IntrinsicElements["mesh"]>((props, 
     );
 });
 LogoHero.displayName = "LogoHero";
+useGLTF.preload('/logo2.glb');
+
 

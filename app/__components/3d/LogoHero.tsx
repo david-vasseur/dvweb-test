@@ -1,10 +1,14 @@
 "use client";
 
-import { Float } from "@react-three/drei";
+import { Float, useGLTF } from "@react-three/drei";
 import { forwardRef, JSX } from "react";
 import { Mesh } from "three";
+import { degToRad } from "three/src/math/MathUtils.js";
 
 export const LogoHero = forwardRef<Mesh, JSX.IntrinsicElements["mesh"]>((props, ref) => {
+
+    const { scene } = useGLTF('/logo2.glb');
+
     return (
         <Float
             speed={2}                // vitesse de l'animation
@@ -12,10 +16,11 @@ export const LogoHero = forwardRef<Mesh, JSX.IntrinsicElements["mesh"]>((props, 
             floatIntensity={1}       // amplitude du mouvement
             floatingRange={[0, 0]}
         >
-            <mesh ref={ref} position={[0, 1, -2]} {...props}>
+            {/* <mesh ref={ref} position={[0, 1, -2]} {...props}>
                 <boxGeometry args={[1, 1, 1]} />
                 <meshStandardMaterial color="orange" />
-            </mesh>
+            </mesh> */}
+            <primitive ref={ref} object={scene} position={[0, 1, -2]} rotation={[degToRad(90), 0, 0]} scale={0.4} />
         </Float>
     );
 });
